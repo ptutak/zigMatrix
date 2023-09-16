@@ -135,12 +135,13 @@ test "diag" {
     try testing.expect(matrix.at(3, 2) == 0.0);
 }
 
-test "deallocate" {
+test "transpose" {
     var data = [_]f64{ 1, 2, 3, 4 };
     var size = data.len;
-    var matrix1 = try matr.matrix(data[0..size], 2, 2);
-    try testing.expect(matrix1.at(0, 0) == 1.0);
-    try testing.expect(matrix1.at(0, 1) == 2.0);
-    try testing.expect(matrix1.at(1, 0) == 3.0);
-    try testing.expect(matrix1.at(1, 1) == 4.0);
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var matrix2 = try matrix.transpose();
+    try testing.expect(matrix2.at(0, 0) == 1.0);
+    try testing.expect(matrix2.at(0, 1) == 3.0);
+    try testing.expect(matrix2.at(1, 0) == 2.0);
+    try testing.expect(matrix2.at(1, 1) == 4.0);
 }

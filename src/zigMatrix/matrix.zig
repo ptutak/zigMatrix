@@ -69,6 +69,42 @@ const Matrix = struct {
     pub fn at(self: *Matrix, i: usize, j: usize) f64 {
         return self._data[i * self.n + j];
     }
+
+    pub fn determinant(self: *Matrix) !f64 {
+        if (self.m != self.n) {
+            std.debug.print("matrix: matrix is not square\n", .{});
+            return errors.ZigMatrixError;
+        }
+        if (self.m == 1) {
+            return self._data[0];
+        }
+        var det: f64 = 0.0;
+        for (0..self.n) |j| {
+            const submatr = try self.submatrix(0, j);
+            det += (-1.0).pow(f64, 0.0 + j) * self._data[j] * submatr.determinant() catch |err| {
+                std.debug.print("matrix: unable to calculate determinant: {!}\n", .{err});
+                return err;
+            };
+        }
+    }
+
+    pub fn gaussian_elimination(self: *Matrix) !Matrix {
+        _ = self;
+        return zeros(1, 1);
+    }
+
+    pub fn transpose(self: *Matrix) !Matrix {
+        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        for (0.., self._data) |k, value| {
+            const i = k / self.n;
+            const j = k % self.n;
+            data[j * self.m + i] = value;
+        }
+        return matrix(data, self.n, self.m);
+    }
 };
 
 pub fn matrix(data: []f64, m: usize, n: usize) !Matrix {
@@ -125,4 +161,8 @@ pub fn diag(data: []f64) !Matrix {
         matr._data[i * n + i] = value;
     }
     return matr;
+}
+
+pub fn vector(data: []f64) !Matrix {
+    return matrix(data, data.len, 1);
 }

@@ -88,9 +88,38 @@ const Matrix = struct {
         }
     }
 
-    pub fn gaussian_elimination(self: *Matrix) !Matrix {
-        _ = self;
-        return zeros(1, 1);
+    pub fn upper_traingular(self: *Matrix) !Matrix {
+        if (self.m != self.n) {
+            std.debug.print("matrix: matrix is not square\n", .{});
+            return errors.ZigMatrixError;
+        }
+        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+
+        for (0.., self._data) |k, value| {
+            const i = k / self.n;
+            const j = k % self.n;
+            if (i > j) {
+                data[k] = 0.0;
+            } else {
+                data[k] = value;
+            }
+        }
+        return matrix(data, self.m, self.n);
+    }
+
+    fn swap_rows(self: *Matrix, in1: usize, in2: usize) !Matrix {
+        if (in1 >= self.m or in2 >= self.m) {
+            std.debug.print("matrix: row index out of bounds\n", .{});
+            return errors.ZigMatrixError;
+        }
+        for (0..self.n) |j| {
+            const tmp = self._data[in1 * self.n + j];
+            self._data[in1 * self.n + j] = self._data[in2 * self.n + j];
+            self._data[in2 * self.n + j] = tmp;
+        }
     }
 
     pub fn transpose(self: *Matrix) !Matrix {

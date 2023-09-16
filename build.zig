@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) void {
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     const main_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/zigMatrix/array_test.zig" },
+        .root_source_file = .{ .path = "src/zigMatrix/matrix_test.zig" },
         .target = target,
         .optimize = optimize,
     });

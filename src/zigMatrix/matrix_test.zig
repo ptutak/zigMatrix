@@ -181,3 +181,53 @@ test "det" {
     const det = try matrix.det();
     try testing.expect(det == -2.0);
 }
+
+test "lu_decomposition" {
+    var data = [_]f64{ 4, 3, 6, 3 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var lu = try matrix.lu_decomposition();
+    try testing.expect(lu.at(0, 0) == 1.0);
+    try testing.expect(lu.at(0, 1) == 0.0);
+    try testing.expect(lu.at(0, 2) == 4);
+    try testing.expect(lu.at(0, 3) == 3);
+    try testing.expect(lu.at(1, 0) == 1.5);
+    try testing.expect(lu.at(1, 1) == 1.0);
+    try testing.expect(lu.at(1, 2) == 0.0);
+    try testing.expect(lu.at(1, 3) == -1.5);
+}
+
+test "split_col" {
+    var data = [_]f64{ 4, 3, 6, 3 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var mat_arr = try matrix.split_col(1);
+    var col = mat_arr[0];
+    try testing.expect(col.at(0, 0) == 4.0);
+    try testing.expect(col.at(1, 0) == 6.0);
+    var col2 = mat_arr[1];
+    try testing.expect(col2.at(0, 0) == 3.0);
+    try testing.expect(col2.at(1, 0) == 3.0);
+}
+
+test "upper triangular" {
+    var data = [_]f64{ 4, 3, 6, 3 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var upper = try matrix.upper_triangular();
+    try testing.expect(upper.at(0, 0) == 4.0);
+    try testing.expect(upper.at(0, 1) == 3.0);
+    try testing.expect(upper.at(1, 0) == 0.0);
+    try testing.expect(upper.at(1, 1) == -1.5);
+}
+
+test "inverse" {
+    var data = [_]f64{ -1, 1.5, 1.0, -1.0 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var inverse = try matrix.inverse();
+    try testing.expect(inverse.at(0, 0) == 2);
+    try testing.expect(inverse.at(0, 1) == 3);
+    try testing.expect(inverse.at(1, 0) == 2);
+    try testing.expect(inverse.at(1, 1) == 2);
+}

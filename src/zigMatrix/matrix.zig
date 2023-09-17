@@ -106,6 +106,18 @@ const Matrix = struct {
         return det_val;
     }
 
+    fn swap_rows(self: *Matrix, in1: usize, in2: usize) !void {
+        if (in1 >= self.m or in2 >= self.m) {
+            std.debug.print("matrix: row index out of bounds\n", .{});
+            return errors.ZigMatrixError;
+        }
+        for (0..self.n) |j| {
+            const tmp = self._data[in1 * self.n + j];
+            self._data[in1 * self.n + j] = self._data[in2 * self.n + j];
+            self._data[in2 * self.n + j] = tmp;
+        }
+    }
+
     fn find_non_zero_in_col(self: *const Matrix, row: usize, col: usize) !usize {
         for (row..self.m) |i| {
             if (self.at(i, col) != 0.0) {
@@ -116,7 +128,92 @@ const Matrix = struct {
     }
 
     pub fn upper_triangular(self: *const Matrix) !Matrix {
-        _ = self;
+        if (self.m != self.n) {
+            std.debug.print("matrix: matrix is not square\n", .{});
+            return errors.ZigMatrixError;
+        }
+        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        @memcpy(data, self._data);
+        var new_matrix = try matrix(data, self.m, self.n);
+        for (0..new_matrix.m) |k| {
+            if (new_matrix.at(k, k) == 0.0) {
+                std.debug.print("matrix: unable to find non-zero element at ({d}{d})\n", .{ k, k });
+            }
+            for (k + 1..new_matrix.m) |i| {
+                const factor = new_matrix.at(i, k) / new_matrix.at(k, k);
+                for (k..new_matrix.n) |j| {
+                    new_matrix._data[i * self.n + j] -= factor * new_matrix.at(k, j);
+                }
+            }
+        }
+        return new_matrix;
+    }
+
+    pub fn lu_decomposition(self: *const Matrix) !Matrix {
+        if (self.m != self.n) {
+            std.debug.print("matrix: matrix is not square\n", .{});
+            return errors.ZigMatrixError;
+        }
+        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        @memcpy(data, self._data);
+        var new_matrix = try matrix(data, self.m, self.n);
+        var eye_matrix = try eye(self.m);
+        var concatenated_matrix = try eye_matrix.concat(new_matrix);
+        const size = concatenated_matrix.m;
+        for (0..size) |k| {
+            if (concatenated_matrix.at(k, k + size) == 0.0) {
+                std.debug.print("matrix: unable to find non-zero element at ({d}{d})\n", .{ k, k });
+            }
+            for (k + 1..size) |i| {
+                const factor = concatenated_matrix.at(i, k + size) / concatenated_matrix.at(k, k + size);
+                for (k + size..concatenated_matrix.n) |j| {
+                    concatenated_matrix._data[i * concatenated_matrix.n + j] -= factor * concatenated_matrix.at(k, j);
+                }
+                concatenated_matrix._data[i * concatenated_matrix.n + k] = factor;
+            }
+        }
+        return concatenated_matrix;
+    }
+
+    pub fn inverse(self: *const Matrix) !Matrix {
+        if (self.m != self.n) {
+            std.debug.print("matrix: matrix is not square\n", .{});
+            return errors.ZigMatrixError;
+        }
+        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        @memcpy(data, self._data);
+        var new_matrix = try matrix(data, self.m, self.n);
+        var eye_matrix = try eye(self.m);
+        var concatenated_matrix = try new_matrix.concat(eye_matrix);
+        const size = concatenated_matrix.m;
+        for (0..size) |k| {
+            if (concatenated_matrix.at(k, k) == 0.0) {
+                std.debug.print("matrix: unable to find non-zero element at ({d}{d})\n", .{ k, k });
+            }
+            const div_factor = concatenated_matrix.at(k, k);
+            for (k..concatenated_matrix.n) |j| {
+                concatenated_matrix._data[k * concatenated_matrix.n + j] /= div_factor;
+            }
+            for (0..size) |i| {
+                if (i == k) {
+                    continue;
+                }
+                const factor = concatenated_matrix.at(i, k);
+                for (k..concatenated_matrix.n) |j| {
+                    concatenated_matrix._data[i * concatenated_matrix.n + j] -= factor * concatenated_matrix.at(k, j);
+                }
+            }
+        }
+        return (try concatenated_matrix.split_col(size))[1];
     }
 
     pub fn multiply(self: *const Matrix, scalar: f64) !Matrix {
@@ -146,16 +243,27 @@ const Matrix = struct {
         return matrix(data, self.m, self.n + matr.n);
     }
 
-    fn swap_rows(self: *Matrix, in1: usize, in2: usize) !void {
-        if (in1 >= self.m or in2 >= self.m) {
-            std.debug.print("matrix: row index out of bounds\n", .{});
+    pub fn split_col(self: *const Matrix, col: usize) ![2]Matrix {
+        if (col >= self.n) {
+            std.debug.print("matrix: column index out of bounds\n", .{});
             return errors.ZigMatrixError;
         }
-        for (0..self.n) |j| {
-            const tmp = self._data[in1 * self.n + j];
-            self._data[in1 * self.n + j] = self._data[in2 * self.n + j];
-            self._data[in2 * self.n + j] = tmp;
+        var left_data = std.heap.page_allocator.alloc(f64, self.m * col) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        var right_data = std.heap.page_allocator.alloc(f64, self.m * (self.n - col)) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        const left_n = col;
+        const right_n = self.n - col;
+        for (0..self.m) |i| {
+            @memcpy(left_data[i * left_n .. (i + 1) * left_n], self._data[i * self.n .. i * self.n + left_n]);
+            @memcpy(right_data[i * right_n .. (i + 1) * right_n], self._data[i * self.n + left_n .. (i + 1) * self.n]);
         }
+        const mat_array = [2]Matrix{ try matrix(left_data, self.m, col), try matrix(right_data, self.m, self.n - col) };
+        return mat_array;
     }
 
     pub fn transpose(self: *const Matrix) !Matrix {

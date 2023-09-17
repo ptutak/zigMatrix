@@ -173,3 +173,11 @@ test "concat" {
     try testing.expect(matrix3.at(1, 2) == 7.0);
     try testing.expect(matrix3.at(1, 3) == 8.0);
 }
+
+test "det" {
+    var data = [_]f64{ 1, 2, 3, 4 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    const det = try matrix.det();
+    try testing.expect(det == -2.0);
+}

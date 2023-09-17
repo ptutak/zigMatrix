@@ -68,25 +68,7 @@ const Matrix = struct {
         return self._data[i * self.n + j];
     }
 
-    pub fn determinant(self: *const Matrix) !f64 {
-        if (self.m != self.n) {
-            std.debug.print("matrix: matrix is not square\n", .{});
-            return errors.ZigMatrixError;
-        }
-        if (self.m == 1) {
-            return self._data[0];
-        }
-        var det: f64 = 0.0;
-        for (0..self.n) |j| {
-            const submatr = try self.submatrix(0, j);
-            det += (-1.0).pow(f64, 0.0 + j) * self._data[j] * submatr.determinant() catch |err| {
-                std.debug.print("matrix: unable to calculate determinant: {!}\n", .{err});
-                return err;
-            };
-        }
-    }
-
-    pub fn upper_traingular(self: *const Matrix) !Matrix {
+    pub fn det(self: *const Matrix) !f64 {
         if (self.m != self.n) {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
@@ -96,16 +78,45 @@ const Matrix = struct {
             return err;
         };
         @memcpy(data, self._data);
-        for (0..self.m) |k| {
-            const i = k / self.n;
-            const j = k % self.n;
-            if (i > j) {
-                data[k] = 0.0;
-            } else {
-                data[k] = 0.0;
+        var new_matrix = try matrix(data, self.m, self.n);
+        var swaps: u64 = 0;
+        for (0..new_matrix.m) |k| {
+            if (new_matrix.at(k, k) == 0.0) {
+                const col = new_matrix.find_non_zero_in_col(k, k) catch |err| {
+                    std.debug.print("matrix: unable to find non-zero element in column {d}: {!}\n", .{ k, err });
+                    return err;
+                };
+                try new_matrix.swap_rows(k, col);
+                swaps += 1;
+            }
+            for (k + 1..new_matrix.m) |i| {
+                const factor = new_matrix.at(i, k) / new_matrix.at(k, k);
+                for (k..new_matrix.n) |j| {
+                    new_matrix._data[i * self.n + j] -= factor * self.at(k, j);
+                }
             }
         }
-        return matrix(data, self.m, self.n);
+        var det_val: f64 = 1.0;
+        for (0..new_matrix.m) |i| {
+            det_val *= new_matrix.at(i, i);
+        }
+        if (swaps % 2 == 1) {
+            det_val *= -1.0;
+        }
+        return det_val;
+    }
+
+    fn find_non_zero_in_col(self: *const Matrix, row: usize, col: usize) !usize {
+        for (row..self.m) |i| {
+            if (self.at(i, col) != 0.0) {
+                return i;
+            }
+        }
+        return errors.ZigMatrixResultError;
+    }
+
+    pub fn upper_triangular(self: *const Matrix) !Matrix {
+        _ = self;
     }
 
     pub fn multiply(self: *const Matrix, scalar: f64) !Matrix {
@@ -135,7 +146,7 @@ const Matrix = struct {
         return matrix(data, self.m, self.n + matr.n);
     }
 
-    fn swap_rows(self: *Matrix, in1: usize, in2: usize) !Matrix {
+    fn swap_rows(self: *Matrix, in1: usize, in2: usize) !void {
         if (in1 >= self.m or in2 >= self.m) {
             std.debug.print("matrix: row index out of bounds\n", .{});
             return errors.ZigMatrixError;

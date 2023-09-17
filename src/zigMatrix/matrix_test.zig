@@ -145,3 +145,14 @@ test "transpose" {
     try testing.expect(matrix2.at(1, 0) == 2.0);
     try testing.expect(matrix2.at(1, 1) == 4.0);
 }
+
+test "multiply" {
+    var data = [_]f64{ 1, 2, 3, 4 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var matrix2 = try matrix.multiply(2.0);
+    try testing.expect(matrix2.at(0, 0) == 2.0);
+    try testing.expect(matrix2.at(0, 1) == 4.0);
+    try testing.expect(matrix2.at(1, 0) == 6.0);
+    try testing.expect(matrix2.at(1, 1) == 8.0);
+}

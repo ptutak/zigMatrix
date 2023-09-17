@@ -97,17 +97,42 @@ const Matrix = struct {
             std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
             return err;
         };
-
-        for (0.., self._data) |k, value| {
+        @memcpy(data, self._data);
+        for (0..self.m) |k| {
             const i = k / self.n;
             const j = k % self.n;
             if (i > j) {
                 data[k] = 0.0;
             } else {
-                data[k] = value;
+                data[k] = 0.0;
             }
         }
         return matrix(data, self.m, self.n);
+    }
+
+    pub fn multiply(self: *Matrix, scalar: f64) !Matrix {
+        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        for (0.., self._data) |i, value| {
+            data[i] = value * scalar;
+        }
+        return matrix(data, self.m, self.n);
+    }
+
+    pub fn concat(self: *Matrix, matr: Matrix) !Matrix {
+        if (self.m != matr.m) {
+            std.debug.print("matrix: matrix dimensions do not match\n", .{});
+            return errors.ZigMatrixError;
+        }
+        var data = std.heap.page_allocator.alloc(f64, self._data.len + matr._data.len) catch |err| {
+            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+            return err;
+        };
+        @memcpy(data[0..self.n], self._data[0..self.n]);
+        @memcpy(data[self._data.len..], matr._data);
+        return matrix(data, self.m, self.n + matr.n);
     }
 
     fn swap_rows(self: *Matrix, in1: usize, in2: usize) !Matrix {

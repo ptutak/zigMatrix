@@ -9,7 +9,7 @@ const Matrix = struct {
         return matrix(data, m, n);
     }
 
-    pub fn add(self: *Matrix, matr: Matrix) !Matrix {
+    pub fn add(self: *const Matrix, matr: Matrix) !Matrix {
         if (self._data.len != matr._data.len) {
             std.debug.print("matrix: matrix length does not match\n", .{});
             return errors.ZigMatrixError;
@@ -24,7 +24,7 @@ const Matrix = struct {
         return matrix(data, self.m, self.n);
     }
 
-    pub fn sub(self: *Matrix, matr: Matrix) !Matrix {
+    pub fn sub(self: *const Matrix, matr: Matrix) !Matrix {
         if (self._data.len != matr._data.len) {
             std.debug.print("matrix: matrix length does not match\n", .{});
             return errors.ZigMatrixError;
@@ -39,7 +39,7 @@ const Matrix = struct {
         return matrix(data, self.m, self.n);
     }
 
-    pub fn prod(self: *Matrix, matr: Matrix) !Matrix {
+    pub fn prod(self: *const Matrix, matr: Matrix) !Matrix {
         if (self._data.len != matr._data.len) {
             std.debug.print("matrix: matrix length does not match\n", .{});
             return errors.ZigMatrixError;
@@ -48,29 +48,27 @@ const Matrix = struct {
             std.debug.print("matrix: matrix dimensions do not match\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
+        var data = std.heap.page_allocator.alloc(f64, self.m * matr.n) catch |err| {
             std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
             return err;
         };
-        for (0.., self._data) |k, value| {
-            _ = value;
-            const i = k / self.n;
-            const j = k % self.n;
-            const row = self._data[i * self.n .. (i + 1) * self.n];
-            var sum: f64 = 0.0;
-            for (0.., row) |ij, xi| {
-                sum += xi * matr._data[ij * matr.n + j];
+        for (0..self.m) |i| {
+            for (0..matr.n) |j| {
+                var sum: f64 = 0.0;
+                for (0..self.n) |k| {
+                    sum += self.at(i, k) * matr.at(k, j);
+                }
+                data[i * matr.n + j] = sum;
             }
-            data[k] = sum;
         }
-        return matrix(data, self.m, self.n);
+        return matrix(data, self.m, matr.n);
     }
 
-    pub fn at(self: *Matrix, i: usize, j: usize) f64 {
+    pub fn at(self: *const Matrix, i: usize, j: usize) f64 {
         return self._data[i * self.n + j];
     }
 
-    pub fn determinant(self: *Matrix) !f64 {
+    pub fn determinant(self: *const Matrix) !f64 {
         if (self.m != self.n) {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
@@ -88,7 +86,7 @@ const Matrix = struct {
         }
     }
 
-    pub fn upper_traingular(self: *Matrix) !Matrix {
+    pub fn upper_traingular(self: *const Matrix) !Matrix {
         if (self.m != self.n) {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
@@ -110,7 +108,7 @@ const Matrix = struct {
         return matrix(data, self.m, self.n);
     }
 
-    pub fn multiply(self: *Matrix, scalar: f64) !Matrix {
+    pub fn multiply(self: *const Matrix, scalar: f64) !Matrix {
         var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
             std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
             return err;
@@ -121,7 +119,7 @@ const Matrix = struct {
         return matrix(data, self.m, self.n);
     }
 
-    pub fn concat(self: *Matrix, matr: Matrix) !Matrix {
+    pub fn concat(self: *const Matrix, matr: Matrix) !Matrix {
         if (self.m != matr.m) {
             std.debug.print("matrix: matrix dimensions do not match\n", .{});
             return errors.ZigMatrixError;
@@ -149,7 +147,7 @@ const Matrix = struct {
         }
     }
 
-    pub fn transpose(self: *Matrix) !Matrix {
+    pub fn transpose(self: *const Matrix) !Matrix {
         var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
             std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
             return err;

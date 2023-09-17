@@ -156,3 +156,20 @@ test "multiply" {
     try testing.expect(matrix2.at(1, 0) == 6.0);
     try testing.expect(matrix2.at(1, 1) == 8.0);
 }
+
+test "concat" {
+    var data = [_]f64{ 1, 2, 3, 4 };
+    var data2 = [_]f64{ 5, 6, 7, 8 };
+    var size = data.len;
+    var matrix1 = try matr.matrix(data[0..size], 2, 2);
+    var matrix2 = try matr.matrix(data2[0..size], 2, 2);
+    var matrix3 = try matrix1.concat(matrix2);
+    try testing.expect(matrix3.at(0, 0) == 1.0);
+    try testing.expect(matrix3.at(0, 1) == 2.0);
+    try testing.expect(matrix3.at(0, 2) == 5.0);
+    try testing.expect(matrix3.at(0, 3) == 6.0);
+    try testing.expect(matrix3.at(1, 0) == 3.0);
+    try testing.expect(matrix3.at(1, 1) == 4.0);
+    try testing.expect(matrix3.at(1, 2) == 7.0);
+    try testing.expect(matrix3.at(1, 3) == 8.0);
+}

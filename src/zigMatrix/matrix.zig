@@ -130,8 +130,10 @@ const Matrix = struct {
             std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
             return err;
         };
-        @memcpy(data[0..self.n], self._data[0..self.n]);
-        @memcpy(data[self._data.len..], matr._data);
+        for (0..self.m) |i| {
+            @memcpy(data[i * (self.n + matr.n) .. i * (self.n + matr.n) + self.n], self._data[i * self.n .. (i + 1) * self.n]);
+            @memcpy(data[i * (self.n + matr.n) + self.n .. (i + 1) * (self.n + matr.n)], matr._data[i * matr.n .. (i + 1) * matr.n]);
+        }
         return matrix(data, self.m, self.n + matr.n);
     }
 

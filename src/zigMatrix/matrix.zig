@@ -278,6 +278,13 @@ const Matrix = struct {
         }
         return matrix(data, self.n, self.m);
     }
+
+    pub fn equal(self: *const Matrix, matr: Matrix) bool {
+        if (self.m != matr.m or self.n != matr.n) {
+            return false;
+        }
+        return std.mem.eql(f64, self._data, matr._data);
+    }
 };
 
 pub fn matrix(data: []f64, m: usize, n: usize) !Matrix {

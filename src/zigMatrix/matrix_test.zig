@@ -230,4 +230,7 @@ test "inverse" {
     try testing.expect(inverse.at(0, 1) == 3);
     try testing.expect(inverse.at(1, 0) == 2);
     try testing.expect(inverse.at(1, 1) == 2);
+    const eye = try matrix.prod(inverse);
+    const ideal_eye = try matr.eye(2);
+    try testing.expect(eye.equal(ideal_eye));
 }

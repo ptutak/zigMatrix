@@ -39,29 +39,26 @@ const Matrix = struct {
         return matrix(data, self.m, self.n);
     }
 
-    pub fn prod(self: *const Matrix, matr: Matrix) !Matrix {
-        if (self._data.len != matr._data.len) {
+    pub fn prod(self: *const Matrix, other: Matrix) !Matrix {
+        if (self._data.len != other._data.len) {
             std.debug.print("matrix: matrix length does not match\n", .{});
             return errors.ZigMatrixError;
         }
-        if ((self.m != matr.n) or (self.n != matr.m)) {
+        if ((self.m != other.n) or (self.n != other.m)) {
             std.debug.print("matrix: matrix dimensions do not match\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = std.heap.page_allocator.alloc(f64, self.m * matr.n) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix(self.m, other.n);
         for (0..self.m) |i| {
-            for (0..matr.n) |j| {
+            for (0..other.n) |j| {
                 var sum: f64 = 0.0;
                 for (0..self.n) |k| {
-                    sum += self.at(i, k) * matr.at(k, j);
+                    sum += self.at(i, k) * other.at(k, j);
                 }
-                data[i * matr.n + j] = sum;
+                data[i * other.n + j] = sum;
             }
         }
-        return matrix(data, self.m, matr.n);
+        return matrix(data, self.m, other.n);
     }
 
     pub fn at(self: *const Matrix, i: usize, j: usize) f64 {
@@ -73,10 +70,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         var swaps: u64 = 0;
@@ -132,10 +126,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         for (0..new_matrix.m) |k| {
@@ -157,10 +148,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         var eye_matrix = try eye(self.m);
@@ -186,10 +174,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         var eye_matrix = try eye(self.m);
@@ -217,30 +202,24 @@ const Matrix = struct {
     }
 
     pub fn multiply(self: *const Matrix, scalar: f64) !Matrix {
-        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix(self.m, self.n);
         for (0.., self._data) |i, value| {
             data[i] = value * scalar;
         }
         return matrix(data, self.m, self.n);
     }
 
-    pub fn concat(self: *const Matrix, matr: Matrix) !Matrix {
-        if (self.m != matr.m) {
+    pub fn concat(self: *const Matrix, other: Matrix) !Matrix {
+        if (self.m != other.m) {
             std.debug.print("matrix: matrix dimensions do not match\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = std.heap.page_allocator.alloc(f64, self._data.len + matr._data.len) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix(self.m, self.n + other.n);
         for (0..self.m) |i| {
-            @memcpy(data[i * (self.n + matr.n) .. i * (self.n + matr.n) + self.n], self._data[i * self.n .. (i + 1) * self.n]);
-            @memcpy(data[i * (self.n + matr.n) + self.n .. (i + 1) * (self.n + matr.n)], matr._data[i * matr.n .. (i + 1) * matr.n]);
+            @memcpy(data[i * (self.n + other.n) .. i * (self.n + other.n) + self.n], self._data[i * self.n .. (i + 1) * self.n]);
+            @memcpy(data[i * (self.n + other.n) + self.n .. (i + 1) * (self.n + other.n)], other._data[i * other.n .. (i + 1) * other.n]);
         }
-        return matrix(data, self.m, self.n + matr.n);
+        return matrix(data, self.m, self.n + other.n);
     }
 
     pub fn split_col(self: *const Matrix, col: usize) ![2]Matrix {
@@ -248,14 +227,8 @@ const Matrix = struct {
             std.debug.print("matrix: column index out of bounds\n", .{});
             return errors.ZigMatrixError;
         }
-        var left_data = std.heap.page_allocator.alloc(f64, self.m * col) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
-        var right_data = std.heap.page_allocator.alloc(f64, self.m * (self.n - col)) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var left_data = try allocate_matrix(self.m, col);
+        var right_data = try allocate_matrix(self.m, self.n - col);
         const left_n = col;
         const right_n = self.n - col;
         for (0..self.m) |i| {
@@ -267,16 +240,27 @@ const Matrix = struct {
     }
 
     pub fn transpose(self: *const Matrix) !Matrix {
-        var data = std.heap.page_allocator.alloc(f64, self._data.len) catch |err| {
-            std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-            return err;
-        };
+        var data = try allocate_matrix_data(self._data.len);
         for (0.., self._data) |k, value| {
             const i = k / self.n;
             const j = k % self.n;
             data[j * self.m + i] = value;
         }
         return matrix(data, self.n, self.m);
+    }
+
+    pub fn reshape(self: *const Matrix, m: usize, n: usize) !Matrix {
+        if (self.m * self.n != m * n) {
+            std.debug.print("matrix: matrix length does not match dimensions: {d}, m*n: {d}\n", .{ self.m * self.n, m * n });
+            return errors.ZigMatrixError;
+        }
+        var data = try allocate_matrix(m, n);
+        @memcpy(data, self._data);
+        return matrix(data, m, n);
+    }
+
+    pub fn flatten(self: *const Matrix) !Matrix {
+        return self.reshape(1, self.m * self.n);
     }
 
     pub fn equal(self: *const Matrix, matr: Matrix) bool {
@@ -296,10 +280,7 @@ pub fn matrix(data: []f64, m: usize, n: usize) !Matrix {
 }
 
 pub fn zeros(m: usize, n: usize) !Matrix {
-    var data = std.heap.page_allocator.alloc(f64, m * n) catch |err| {
-        std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-        return err;
-    };
+    var data = try allocate_matrix(m, n);
     for (0..data.len) |index| {
         data[index] = 0.0;
     }
@@ -307,10 +288,7 @@ pub fn zeros(m: usize, n: usize) !Matrix {
 }
 
 pub fn ones(m: usize, n: usize) !Matrix {
-    var data = std.heap.page_allocator.alloc(f64, m * n) catch |err| {
-        std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-        return err;
-    };
+    var data = try allocate_matrix(m, n);
     for (0..data.len) |index| {
         data[index] = 1.0;
     }
@@ -318,10 +296,7 @@ pub fn ones(m: usize, n: usize) !Matrix {
 }
 
 pub fn eye(n: usize) !Matrix {
-    var data = std.heap.page_allocator.alloc(f64, n * n) catch |err| {
-        std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
-        return err;
-    };
+    var data = try allocate_matrix(n, n);
     for (0..data.len) |index| {
         const i = index / n;
         const j = index % n;
@@ -345,4 +320,18 @@ pub fn diag(data: []f64) !Matrix {
 
 pub fn vector(data: []f64) !Matrix {
     return matrix(data, data.len, 1);
+}
+
+fn allocate_matrix(m: usize, n: usize) ![]f64 {
+    return std.heap.page_allocator.alloc(f64, m * n) catch |err| {
+        std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+        return err;
+    };
+}
+
+fn allocate_matrix_data(size: usize) ![]f64 {
+    return std.heap.page_allocator.alloc(f64, size) catch |err| {
+        std.debug.print("matrix: unable to allocate memory: {!}\n", .{err});
+        return err;
+    };
 }

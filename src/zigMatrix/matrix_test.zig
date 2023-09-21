@@ -67,6 +67,21 @@ test "basic prod" {
     try testing.expect(matrix2.at(1, 1) == 4.0);
 }
 
+test "prod" {
+    var data = [_]f64{ 1, 2, 3, 4 };
+    var data2 = [_]f64{ 1, 2, 3, 4 };
+    var matrix1 = try matr.matrix(data[0..data.len], 4, 1);
+    var matrix2 = try matr.matrix(data2[0..data2.len], 1, 4);
+    var matrix3 = try matrix1.prod(matrix2);
+    var expected_data = [_]f64{ 1, 2, 3, 4, 2, 4, 6, 8, 3, 6, 9, 12, 4, 8, 12, 16 };
+    const expected = try matr.matrix(
+        expected_data[0..expected_data.len],
+        4,
+        4,
+    );
+    try testing.expect(matrix3.equal(expected));
+}
+
 test "prod errors" {
     var data = [_]f64{ 1, 2, 3, 4 };
     var data2 = [_]f64{ 1, 2, 3, 4, 5, 6 };
@@ -233,4 +248,27 @@ test "inverse" {
     const eye = try matrix.prod(inverse);
     const ideal_eye = try matr.eye(2);
     try testing.expect(eye.equal(ideal_eye));
+}
+
+test "reshape" {
+    var data = [_]f64{ 1, 2, 3, 4 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var matrix2 = try matrix.reshape(4, 1);
+    try testing.expect(matrix2.at(0, 0) == 1.0);
+    try testing.expect(matrix2.at(1, 0) == 2.0);
+    try testing.expect(matrix2.at(2, 0) == 3.0);
+    try testing.expect(matrix2.at(3, 0) == 4.0);
+}
+
+test "flatten" {
+    var data = [_]f64{ 1, 2, 3, 4 };
+    var size = data.len;
+    var matrix = try matr.matrix(data[0..size], 2, 2);
+    var matrix2 = try matrix.flatten();
+    try testing.expect(matrix2.equal(try matr.matrix(
+        data[0..size],
+        1,
+        4,
+    )));
 }

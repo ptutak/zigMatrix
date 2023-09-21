@@ -1,0 +1,6 @@
+id: yeeab3vkw977zxdkjg5oybio5s1fk792x4ysetfzn2tjfmly
+name: zigMatrix
+main: src/zigMatrix/lib.zig
+license: MIT
+description: My desc
+dependencies:

@@ -2,5 +2,9 @@ id: yeeab3vkw977zxdkjg5oybio5s1fk792x4ysetfzn2tjfmly
 name: zigMatrix
 main: src/zigMatrix/lib.zig
 license: MIT
-description: My desc
+description: zigMatrix is a library for working with matrices in zig.
 dependencies:
+
+  - src: git https://github.com/Hejsil/ziter
+    name: ziter
+    main: ziter.zig

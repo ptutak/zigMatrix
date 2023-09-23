@@ -272,3 +272,13 @@ test "flatten" {
         4,
     )));
 }
+
+test "linspace" {
+    var expected = [_]f64{ 1, 3.25, 5.5, 7.75, 10 };
+    var matrix = try matr.linspace(1.0, 10.0, 5);
+    try testing.expect(matrix.equal(try matr.matrix(
+        &expected,
+        1,
+        5,
+    )));
+}

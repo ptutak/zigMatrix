@@ -335,3 +335,12 @@ fn allocate_matrix_data(size: usize) ![]f64 {
         return err;
     };
 }
+
+pub fn linspace(start: f64, end: f64, n: usize) !Matrix {
+    var data = try allocate_matrix(1, n);
+    const step = (end - start) / @as(f64, @floatFromInt(n - 1));
+    for (0..n) |i| {
+        data[i] = start + step * @as(f64, @floatFromInt(i));
+    }
+    return matrix(data, 1, n);
+}

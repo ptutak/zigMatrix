@@ -2,6 +2,7 @@ const std = @import("std");
 const testing = @import("std").testing;
 const matr = @import("matrix.zig");
 const errors = @import("errors.zig");
+const expect = std.testing.expect;
 
 test "basic add functionality" {
     var data = [_]f64{ 1, 2, 3, 4 };
@@ -281,4 +282,14 @@ test "linspace" {
         1,
         5,
     )));
+}
+
+test "allocation" {
+    var matrix = try matr.zeros(1000, 1000);
+    matrix.free();
+    for (0..5) |i| {
+        _ = i;
+        matrix = try matr.zeros(1000, 1000);
+        defer matrix.free();
+    }
 }

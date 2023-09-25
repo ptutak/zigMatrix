@@ -9,6 +9,10 @@ const Matrix = struct {
         return matrix(data, m, n);
     }
 
+    pub fn free(self: *Matrix) void {
+        std.heap.page_allocator.free(self._data);
+    }
+
     pub fn add(self: *const Matrix, matr: Matrix) !Matrix {
         if (self._data.len != matr._data.len) {
             std.debug.print("matrix: matrix length does not match\n", .{});

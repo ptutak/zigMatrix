@@ -90,3 +90,25 @@ pub fn collision_detection(point1: Point, point2: Point) bool {
     const distance = std.math.sqrt(dx * dx + dy * dy);
     return distance < point1.r + point2.r;
 }
+
+pub fn collision_response(point1: *Point, point2: *Point) void {
+    const dx = point1.x - point2.x;
+    const dy = point1.y - point2.y;
+    const distance = std.math.sqrt(dx * dx + dy * dy);
+    const nx = dx / distance;
+    const ny = dy / distance;
+    const s = point1.r + point2.r - distance;
+    point1.x += s * nx * 0.5;
+    point1.y += s * ny * 0.5;
+    point2.x -= s * nx * 0.5;
+    point2.y -= s * ny * 0.5;
+    const p = 2 * (point1.vx * nx + point1.vy * ny - point2.vx * nx - point2.vy * ny) / (point1.m + point2.m);
+    const vx1 = point1.vx - p * point1.m * nx;
+    const vy1 = point1.vy - p * point1.m * ny;
+    const vx2 = point2.vx + p * point2.m * nx;
+    const vy2 = point2.vy + p * point2.m * ny;
+    point1.vx = vx1;
+    point1.vy = vy1;
+    point2.vx = vx2;
+    point2.vy = vy2;
+}

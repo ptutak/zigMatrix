@@ -3,8 +3,6 @@ const std = @import("std");
 const Point = struct {
     x: f64,
     y: f64,
-    ax: f64,
-    ay: f64,
     vx: f64,
     vy: f64,
     m: f64,
@@ -22,11 +20,11 @@ const Point = struct {
     }
 
     pub fn update(self: *Point, dt: f64) void {
-        self.ax = self.Fx / self.m;
-        self.ay = self.Fy / self.m;
-        self.vx += self.ax * dt;
-        self.vy += self.ay * dt;
-        self.x += self.vx * dt;
-        self.y += self.vy * dt;
+        const ax = self.Fx / self.m;
+        const ay = self.Fy / self.m;
+        self.vx += self.vx + ax * dt;
+        self.vy += self.vy + ay * dt;
+        self.x += self.x + self.vx * dt;
+        self.y += self.y + self.vy * dt;
     }
 };

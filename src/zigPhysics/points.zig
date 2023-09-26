@@ -1,18 +1,18 @@
 const std = @import("std");
 
-const G: f64 = 6.67408e-11;
+pub const G: f64 = 6.67408e-11;
 
-const Force = struct {
+pub const Force = struct {
     x: f64,
     y: f64,
 };
 
-const Acceleration = struct {
+pub const Acceleration = struct {
     x: f64,
     y: f64,
 };
 
-const ForceField = struct {
+pub const ForceField = struct {
     Fx: f64,
     Fy: f64,
 
@@ -26,7 +26,7 @@ const ForceField = struct {
     }
 };
 
-const AccelerateField = struct {
+pub const AccelerateField = struct {
     ax: f64,
     ay: f64,
 
@@ -40,17 +40,18 @@ const AccelerateField = struct {
     }
 };
 
-const Field = union {
+pub const Field = union {
     force_field: ForceField,
     accelerate_field: AccelerateField,
 };
 
-const Point = struct {
+pub const Point = struct {
     x: f64,
     y: f64,
     vx: f64,
     vy: f64,
     m: f64,
+    r: f64,
 
     pub fn calculate_force(self: *const Point, fields: []const Field) Force {
         var Fx: f64 = 0.0;
@@ -82,3 +83,10 @@ const Point = struct {
         self.y += self.y + self.vy * dt;
     }
 };
+
+pub fn collision_detection(point1: Point, point2: Point) bool {
+    const dx = point1.x - point2.x;
+    const dy = point1.y - point2.y;
+    const distance = std.math.sqrt(dx * dx + dy * dy);
+    return distance < point1.r + point2.r;
+}

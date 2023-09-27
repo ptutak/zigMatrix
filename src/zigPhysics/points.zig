@@ -26,6 +26,22 @@ pub const ForceField = struct {
     }
 };
 
+pub const GravityField = struct {
+    m: f64,
+    x: f64,
+    y: f64,
+
+    pub fn get_force(self: *const GravityField, point: *const Point) Force {
+        const dx = self.x - point.x;
+        const dy = self.y - point.y;
+        const distance = std.math.sqrt(dx * dx + dy * dy);
+        const F = G * self.m * point.m / (distance * distance);
+        const nx = dx / distance;
+        const ny = dy / distance;
+        return Force{ .x = F * nx, .y = F * ny };
+    }
+};
+
 pub const AccelerateField = struct {
     ax: f64,
     ay: f64,
@@ -40,9 +56,16 @@ pub const AccelerateField = struct {
     }
 };
 
-pub const Field = union {
+const ComplexFieldTag = enum {
+    force_field,
+    accelerate_field,
+    gravity_field,
+};
+
+pub const Field = union(ComplexFieldTag) {
     force_field: ForceField,
     accelerate_field: AccelerateField,
+    gravity_field: GravityField,
 };
 
 pub const Point = struct {
@@ -52,19 +75,25 @@ pub const Point = struct {
     vy: f64,
     m: f64,
     r: f64,
+    bounce_coefficient: f64 = 1.0,
 
     pub fn calculate_force(self: *const Point, fields: []const Field) Force {
         var Fx: f64 = 0.0;
         var Fy: f64 = 0.0;
         for (fields) |field| {
             switch (field) {
-                .force_field => {
+                ComplexFieldTag.force_field => {
                     const force = field.force_field.get_force(self);
                     Fx += force.x;
                     Fy += force.y;
                 },
-                .accelerate_field => {
+                ComplexFieldTag.accelerate_field => {
                     const force = field.accelerate_field.get_force(self);
+                    Fx += force.x;
+                    Fy += force.y;
+                },
+                ComplexFieldTag.gravity_field => {
+                    const force = field.gravity_field.get_force(self);
                     Fx += force.x;
                     Fy += force.y;
                 },
@@ -102,13 +131,13 @@ pub fn collision_response(point1: *Point, point2: *Point) void {
     point1.y += s * ny * 0.5;
     point2.x -= s * nx * 0.5;
     point2.y -= s * ny * 0.5;
-    const p = 2 * (point1.vx * nx + point1.vy * ny - point2.vx * nx - point2.vy * ny) / (point1.m + point2.m);
+    const p = 2 * ((point1.vx - point2.vx) * nx + (point1.vy - point2.vy) * ny) / (point1.m + point2.m);
     const vx1 = point1.vx - p * point1.m * nx;
     const vy1 = point1.vy - p * point1.m * ny;
     const vx2 = point2.vx + p * point2.m * nx;
     const vy2 = point2.vy + p * point2.m * ny;
-    point1.vx = vx1;
-    point1.vy = vy1;
-    point2.vx = vx2;
-    point2.vy = vy2;
+    point1.vx = vx1 * point1.bounce_coefficient;
+    point1.vy = vy1 * point1.bounce_coefficient;
+    point2.vx = vx2 * point2.bounce_coefficient;
+    point2.vy = vy2 * point2.bounce_coefficient;
 }

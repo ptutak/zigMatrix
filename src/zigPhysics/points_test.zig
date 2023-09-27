@@ -2,6 +2,14 @@ const points = @import("points.zig");
 const std = @import("std");
 const testing = @import("std").testing;
 
+test "force field" {
+    const field = points.ForceField{ .Fx = 1, .Fy = 2 };
+    const point = points.Point{ .x = 1, .y = 2, .r = 1, .vx = 1, .vy = 1, .m = 1 };
+    var fields = [_]points.Field{points.Field{ .force_field = field }};
+    const expected = points.Force{ .Fx = 1, .Fy = 2 };
+    try testing.expect(expected.equals(point.calculate_force(&fields)));
+}
+
 test "collisions" {
     const a = points.Point{ .x = 1, .y = 2, .r = 1, .vx = 1, .vy = 1, .m = 1 };
     const b = points.Point{ .x = 3, .y = 4, .r = 1, .vx = 1, .vy = 1, .m = 1 };

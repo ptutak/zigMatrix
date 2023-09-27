@@ -3,26 +3,38 @@ const std = @import("std");
 pub const G: f64 = 6.67408e-11;
 
 pub const Force = struct {
-    x: f64,
-    y: f64,
+    Fx: f64,
+    Fy: f64,
+
+    pub fn equals(self: *const Force, other: Force) bool {
+        return self.Fx == other.Fx and self.Fy == other.Fy;
+    }
 };
 
 pub const Acceleration = struct {
-    x: f64,
-    y: f64,
+    ax: f64,
+    ay: f64,
+
+    pub fn equals(self: *const Acceleration, other: Acceleration) bool {
+        return self.ax == other.ax and self.ay == other.ay;
+    }
 };
 
 pub const ForceField = struct {
     Fx: f64,
     Fy: f64,
 
-    pub fn get_force(self: *const ForceField, point: *const Point) Force {
+    pub fn get_force(self: *const ForceField, point: Point) Force {
         _ = point;
-        return Force{ .x = self.Fx, .y = self.Fy };
+        return Force{ .Fx = self.Fx, .Fy = self.Fy };
     }
 
-    pub fn get_acceleration(self: *const ForceField, point: *const Point) Acceleration {
+    pub fn get_acceleration(self: *const ForceField, point: Point) Acceleration {
         return Acceleration{ .x = self.Fx / point.m, .y = self.Fy / point.m };
+    }
+
+    pub fn equals(self: *const ForceField, other: ForceField) bool {
+        return self.Fx == other.Fx and self.Fy == other.Fy;
     }
 };
 
@@ -31,14 +43,28 @@ pub const GravityField = struct {
     x: f64,
     y: f64,
 
-    pub fn get_force(self: *const GravityField, point: *const Point) Force {
+    pub fn get_force(self: *const GravityField, point: Point) Force {
         const dx = self.x - point.x;
         const dy = self.y - point.y;
         const distance = std.math.sqrt(dx * dx + dy * dy);
         const F = G * self.m * point.m / (distance * distance);
         const nx = dx / distance;
         const ny = dy / distance;
-        return Force{ .x = F * nx, .y = F * ny };
+        return Force{ .Fx = F * nx, .Fy = F * ny };
+    }
+
+    pub fn get_acceleration(self: *const GravityField, point: Point) Acceleration {
+        const dx = self.x - point.x;
+        const dy = self.y - point.y;
+        const distance = std.math.sqrt(dx * dx + dy * dy);
+        const F = G * self.m / (distance * distance);
+        const nx = dx / distance;
+        const ny = dy / distance;
+        return Acceleration{ .ax = F * nx / point.m, .ay = F * ny / point.m };
+    }
+
+    pub fn equals(self: *const GravityField, other: GravityField) bool {
+        return self.m == other.m and self.x == other.x and self.y == other.y;
     }
 };
 
@@ -46,13 +72,17 @@ pub const AccelerateField = struct {
     ax: f64,
     ay: f64,
 
-    pub fn get_force(self: *const AccelerateField, point: *const Point) Force {
-        return Force{ .x = self.ax * point.m, .y = self.ay * point.m };
+    pub fn get_force(self: *const AccelerateField, point: Point) Force {
+        return Force{ .Fx = self.ax * point.m, .Fy = self.ay * point.m };
     }
 
-    pub fn get_acceleration(self: *const AccelerateField, point: *const Point) Acceleration {
+    pub fn get_acceleration(self: *const AccelerateField, point: Point) Acceleration {
         _ = point;
-        return Acceleration{ .x = self.ax, .y = self.ay };
+        return Acceleration{ .ax = self.ax, .ay = self.ay };
+    }
+
+    pub fn equals(self: *const AccelerateField, other: AccelerateField) bool {
+        return self.ax == other.ax and self.ay == other.ay;
     }
 };
 
@@ -83,26 +113,26 @@ pub const Point = struct {
         for (fields) |field| {
             switch (field) {
                 ComplexFieldTag.force_field => {
-                    const force = field.force_field.get_force(self);
-                    Fx += force.x;
-                    Fy += force.y;
+                    const force = field.force_field.get_force(self.*);
+                    Fx += force.Fx;
+                    Fy += force.Fy;
                 },
                 ComplexFieldTag.accelerate_field => {
-                    const force = field.accelerate_field.get_force(self);
-                    Fx += force.x;
-                    Fy += force.y;
+                    const force = field.accelerate_field.get_force(self.*);
+                    Fx += force.Fx;
+                    Fy += force.Fy;
                 },
                 ComplexFieldTag.gravity_field => {
-                    const force = field.gravity_field.get_force(self);
-                    Fx += force.x;
-                    Fy += force.y;
+                    const force = field.gravity_field.get_force(self.*);
+                    Fx += force.Fx;
+                    Fy += force.Fy;
                 },
             }
         }
-        return Force{ .x = Fx, .y = Fy };
+        return Force{ .Fx = Fx, .Fy = Fy };
     }
 
-    pub fn update(self: *Point, fields: []const Field, dt: f64) void {
+    pub fn update(self: *const Point, fields: []const Field, dt: f64) void {
         const force = self.calculate_force(fields);
         const ax = force.x / self.m;
         const ay = force.y / self.m;

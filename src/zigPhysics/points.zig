@@ -143,6 +143,13 @@ pub const Point = struct {
     }
 };
 
+pub const Solid = struct {
+    x: f64,
+    y: f64,
+    w: f64,
+    h: f64,
+};
+
 pub fn collision_detection(point1: Point, point2: Point) bool {
     const dx = point1.x - point2.x;
     const dy = point1.y - point2.y;

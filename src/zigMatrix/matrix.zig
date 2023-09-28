@@ -1,6 +1,6 @@
 const std = @import("std");
-const allocate = @import("../zigTools/allocate.zig");
-const errors = @import("./errors.zig");
+const allocate = @import("allocate.zig");
+const errors = @import("errors.zig");
 
 const Matrix = struct {
     m: usize,

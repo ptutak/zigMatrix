@@ -15,9 +15,17 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const main = b.addExecutable("main", "src/main.zig");
+    const zigSharedLibModule = b.addModule("common", .{ .source_file = .{ .path = "src/common.zig" } });
+    const zigDraw = b.addStaticLibrary(.{ .name = "zig-draw", .root_source_file = .{ .path = "src/zigDraw/draw.zig" }, .target = target, .optimize = optimize });
+    const zigMatrix = b.addStaticLibrary(.{ .name = "zig-matrix", .root_source_file = .{ .path = "src/zigMatrix/matrix.zig" }, .target = target, .optimize = optimize });
+    const zigPhysics = b.addStaticLibrary(.{ .name = "zig-physics", .root_source_file = .{ .path = "src/zigPhysics/points.zig" }, .target = target, .optimize = optimize });
+    zigDraw.addModule("common", zigSharedLibModule);
+    zigMatrix.addModule("common", zigSharedLibModule);
+    zigPhysics.addModule("common", zigSharedLibModule);
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
-    b.installArtifact(zigTools);
+    b.installArtifact(zigDraw);
+    b.installArtifact(zigMatrix);
+    b.installArtifact(zigPhysics);
 }

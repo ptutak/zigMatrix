@@ -1,5 +1,5 @@
 const std = @import("std");
-const allocate = @import("allocate.zig");
+const common = @import("common");
 const errors = @import("errors.zig");
 
 const Matrix = struct {
@@ -19,7 +19,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix length does not match\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix_data(self._data.len);
+        var data = try common.allocate.allocate_matrix_data(self._data.len);
         for (0.., self._data) |i, value| {
             data[i] = value + matr._data[i];
         }
@@ -31,7 +31,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix length does not match\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix_data(self._data.len);
+        var data = try common.allocate.allocate_matrix_data(self._data.len);
         for (0.., self._data) |i, value| {
             data[i] = value - matr._data[i];
         }
@@ -47,7 +47,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix dimensions do not match\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix(self.m, other.n);
+        var data = try common.allocate.allocate_matrix(self.m, other.n);
         const other_transposed = try other.transpose();
         for (0..self.m) |i| {
             for (0..other_transposed.m) |j| {
@@ -72,7 +72,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix_data(self._data.len);
+        var data = try common.allocate.allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         var swaps: u64 = 0;
@@ -128,7 +128,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix_data(self._data.len);
+        var data = try common.allocate.allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         for (0..new_matrix.m) |k| {
@@ -150,7 +150,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix_data(self._data.len);
+        var data = try common.allocate.allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         var eye_matrix = try eye(self.m);
@@ -176,7 +176,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix is not square\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix_data(self._data.len);
+        var data = try common.allocate.allocate_matrix_data(self._data.len);
         @memcpy(data, self._data);
         var new_matrix = try matrix(data, self.m, self.n);
         var eye_matrix = try eye(self.m);
@@ -204,7 +204,7 @@ const Matrix = struct {
     }
 
     pub fn multiply(self: *const Matrix, scalar: f64) !Matrix {
-        var data = try allocate.allocate_matrix(self.m, self.n);
+        var data = try common.allocate.allocate_matrix(self.m, self.n);
         for (0.., self._data) |i, value| {
             data[i] = value * scalar;
         }
@@ -216,7 +216,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix dimensions do not match\n", .{});
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix(self.m, self.n + other.n);
+        var data = try common.allocate.allocate_matrix(self.m, self.n + other.n);
         for (0..self.m) |i| {
             @memcpy(data[i * (self.n + other.n) .. i * (self.n + other.n) + self.n], self._data[i * self.n .. (i + 1) * self.n]);
             @memcpy(data[i * (self.n + other.n) + self.n .. (i + 1) * (self.n + other.n)], other._data[i * other.n .. (i + 1) * other.n]);
@@ -229,8 +229,8 @@ const Matrix = struct {
             std.debug.print("matrix: column index out of bounds\n", .{});
             return errors.ZigMatrixError;
         }
-        var left_data = try allocate.allocate_matrix(self.m, col);
-        var right_data = try allocate.allocate_matrix(self.m, self.n - col);
+        var left_data = try common.allocate.allocate_matrix(self.m, col);
+        var right_data = try common.allocate.allocate_matrix(self.m, self.n - col);
         const left_n = col;
         const right_n = self.n - col;
         for (0..self.m) |i| {
@@ -242,7 +242,7 @@ const Matrix = struct {
     }
 
     pub fn transpose(self: *const Matrix) !Matrix {
-        var data = try allocate.allocate_matrix_data(self._data.len);
+        var data = try common.allocate.allocate_matrix_data(self._data.len);
         for (0.., self._data) |k, value| {
             const i = k / self.n;
             const j = k % self.n;
@@ -256,7 +256,7 @@ const Matrix = struct {
             std.debug.print("matrix: matrix length does not match dimensions: {d}, m*n: {d}\n", .{ self.m * self.n, m * n });
             return errors.ZigMatrixError;
         }
-        var data = try allocate.allocate_matrix(m, n);
+        var data = try common.allocate.allocate_matrix(m, n);
         @memcpy(data, self._data);
         return matrix(data, m, n);
     }
@@ -282,7 +282,7 @@ pub fn matrix(data: []f64, m: usize, n: usize) !Matrix {
 }
 
 pub fn zeros(m: usize, n: usize) !Matrix {
-    var data = try allocate.allocate_matrix(m, n);
+    var data = try common.allocate.allocate_matrix(m, n);
     for (0..data.len) |index| {
         data[index] = 0.0;
     }
@@ -290,7 +290,7 @@ pub fn zeros(m: usize, n: usize) !Matrix {
 }
 
 pub fn ones(m: usize, n: usize) !Matrix {
-    var data = try allocate.allocate_matrix(m, n);
+    var data = try common.allocate.allocate_matrix(m, n);
     for (0..data.len) |index| {
         data[index] = 1.0;
     }
@@ -298,7 +298,7 @@ pub fn ones(m: usize, n: usize) !Matrix {
 }
 
 pub fn eye(n: usize) !Matrix {
-    var data = try allocate.allocate_matrix(n, n);
+    var data = try common.allocate.allocate_matrix(n, n);
     for (0..data.len) |index| {
         const i = index / n;
         const j = index % n;
@@ -325,7 +325,7 @@ pub fn vector(data: []f64) !Matrix {
 }
 
 pub fn linspace(start: f64, end: f64, n: usize) !Matrix {
-    var data = try allocate.allocate_matrix(1, n);
+    var data = try common.allocate.allocate_matrix(1, n);
     const step = (end - start) / @as(f64, @floatFromInt(n - 1));
     for (0..n) |i| {
         data[i] = start + step * @as(f64, @floatFromInt(i));

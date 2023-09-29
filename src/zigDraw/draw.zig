@@ -1,5 +1,5 @@
 const std = @import("std");
-const lib = @import("lib");
+const lib = @import("common");
 
 pub const Circle = struct {
     x: i32,

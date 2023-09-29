@@ -1,7 +1,3 @@
-const std = @import("std");
-const root = @import("root");
-
-test "test" {
-    std.debug.print("{any}", .{"xxx"});
-    std.debug.print("{any}", .{root});
-}
+pub usingnamespace @import("zigDraw/draw_test.zig");
+pub usingnamespace @import("zigMatrix/matrix_test.zig");
+pub usingnamespace @import("zigPhysics/points_test.zig");

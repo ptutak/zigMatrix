@@ -11,7 +11,7 @@ pub const Plane = struct {
     x_size: usize,
     y_size: usize,
     pub fn draw_circles(self: *const Plane, circles: []const Circle) ![]u8 {
-        var plane = try lib.tools.allocate(u8, self.x_size * (self.y_size + 1));
+        var plane = try lib.allocate.allocate(u8, self.x_size * (self.y_size + 1));
         for (0..self.x_size) |x| {
             for (0..self.y_size) |y| {
                 for (circles) |circle| {

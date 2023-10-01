@@ -16,25 +16,22 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const zigSharedLibModule = b.addModule("common", .{ .source_file = .{ .path = "src/common.zig" } });
-    const zigDraw = b.addStaticLibrary(.{ .name = "zig-draw", .root_source_file = .{ .path = "src/zigDraw/draw.zig" }, .target = target, .optimize = optimize });
-    const zigMatrix = b.addStaticLibrary(.{ .name = "zig-matrix", .root_source_file = .{ .path = "src/zigMatrix/matrix.zig" }, .target = target, .optimize = optimize });
-    const zigPhysics = b.addStaticLibrary(.{ .name = "zig-physics", .root_source_file = .{ .path = "src/zigPhysics/points.zig" }, .target = target, .optimize = optimize });
-    zigDraw.addModule("common", zigSharedLibModule);
-    zigMatrix.addModule("common", zigSharedLibModule);
-    zigPhysics.addModule("common", zigSharedLibModule);
+    const zigDraw = b.addModule("zig-draw", .{ .source_file = .{ .path = "src/zigDraw/draw.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigSharedLibModule }} });
+    const zigMatrix = b.addModule("zig-matrix", .{ .source_file = .{ .path = "src/zigMatrix/matrix.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigSharedLibModule }} });
+    const zigPhysics = b.addModule("zig-physics", .{ .source_file = .{ .path = "src/zigPhysics/points.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigSharedLibModule }} });
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
-    b.installArtifact(zigDraw);
-    b.installArtifact(zigMatrix);
-    b.installArtifact(zigPhysics);
 
     const unit_tests = b.addTest(.{
         .root_source_file = .{ .path = "src/common_test.zig" },
         .target = target,
         .optimize = optimize,
     });
-
+    unit_tests.addModule("common", zigSharedLibModule);
+    unit_tests.addModule("zig-draw", zigDraw);
+    unit_tests.addModule("zig-matrix", zigMatrix);
+    unit_tests.addModule("zig-physics", zigPhysics);
     const run_unit_tests = b.addRunArtifact(unit_tests);
 
     // Similar to creating the run step earlier, this exposes a `test` step to

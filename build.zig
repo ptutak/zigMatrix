@@ -15,10 +15,10 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const zigSharedLibModule = b.addModule("common", .{ .source_file = .{ .path = "src/common.zig" } });
-    const zigDraw = b.addModule("zig-draw", .{ .source_file = .{ .path = "src/zigDraw/draw.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigSharedLibModule }} });
-    const zigMatrix = b.addModule("zig-matrix", .{ .source_file = .{ .path = "src/zigMatrix/matrix.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigSharedLibModule }} });
-    const zigPhysics = b.addModule("zig-physics", .{ .source_file = .{ .path = "src/zigPhysics/points.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigSharedLibModule }} });
+    const zigCommon = b.addModule("common", .{ .source_file = .{ .path = "src/common.zig" } });
+    const zigDraw = b.addModule("zig-draw", .{ .source_file = .{ .path = "src/zigDraw/draw.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigCommon }} });
+    const zigMatrix = b.addModule("zig-matrix", .{ .source_file = .{ .path = "src/zigMatrix/matrix.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigCommon }} });
+    const zigPhysics = b.addModule("zig-physics", .{ .source_file = .{ .path = "src/zigPhysics/points.zig" }, .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigCommon }} });
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
@@ -28,7 +28,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    unit_tests.addModule("common", zigSharedLibModule);
+    unit_tests.addModule("common", zigCommon);
     unit_tests.addModule("zig-draw", zigDraw);
     unit_tests.addModule("zig-matrix", zigMatrix);
     unit_tests.addModule("zig-physics", zigPhysics);

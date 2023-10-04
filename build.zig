@@ -4,7 +4,7 @@ pub fn discover_modules(b: *std.Build, root_source_path: []const u8) !std.ArrayL
     const dir_iterator = try std.fs.cwd().openIterableDir(root_source_path, .{});
     var iterator = dir_iterator.iterate();
     var array = std.ArrayList(*std.Build.Module).init(std.heap.page_allocator);
-
+    errdefer array.deinit();
     while (try iterator.next()) |path| {
         switch (path.kind) {
             .directory => {

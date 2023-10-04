@@ -1,4 +1,4 @@
-const points = @import("zig-physics");
+const points = @import("zigPhysics.points");
 const std = @import("std");
 const testing = @import("std").testing;
 

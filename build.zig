@@ -15,32 +15,16 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const zigCommon = b.addModule("common", .{ .source_file = .{ .path = "src/common.zig" } });
-    const zigDraw = b.addModule("zig-draw", .{
-        .source_file = .{ .path = "src/zigDraw/draw.zig" },
-        .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigCommon }},
-    });
-    const zigMatrix = b.addModule("zig-matrix", .{
-        .source_file = .{ .path = "src/zigMatrix/matrix.zig" },
-        .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigCommon }},
-    });
-    const zigPhysics = b.addModule("zig-physics", .{
-        .source_file = .{ .path = "src/zigPhysics/points.zig" },
-        .dependencies = &[_]std.build.ModuleDependency{.{ .name = "common", .module = zigCommon }},
-    });
-    // This declares intent for the library to be installed into the standard
-    // location when the user invokes the "install" step (the default step when
-    // running `zig build`).
-
+    const common = b.addModule("common", .{ .source_file = .{ .path = "src/common.zig" } });
+    const zigPhysics_points = b.addModule("zigPhysics.points", .{ .source_file = .{ .path = "src/zigPhysics/points.zig" } });
     const unit_tests = b.addTest(.{
         .root_source_file = .{ .path = "src/common_test.zig" },
         .target = target,
         .optimize = optimize,
     });
-    unit_tests.addModule("common", zigCommon);
-    unit_tests.addModule("zig-draw", zigDraw);
-    unit_tests.addModule("zig-matrix", zigMatrix);
-    unit_tests.addModule("zig-physics", zigPhysics);
+
+    unit_tests.addModule("common", common);
+    unit_tests.addModule("zigPhysics.points", zigPhysics_points);
     const run_unit_tests = b.addRunArtifact(unit_tests);
 
     // Similar to creating the run step earlier, this exposes a `test` step to

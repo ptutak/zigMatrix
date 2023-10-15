@@ -1,6 +1,6 @@
 const std = @import("std");
 const common = @import("common");
-const errors = @import("errors.zig");
+const errors = @import("zigMatrix.errors");
 
 const Matrix = struct {
     m: usize,

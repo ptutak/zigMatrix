@@ -1,7 +1,7 @@
 const std = @import("std");
 
 pub fn discover_modules(b: *std.Build, root_source_path: []const u8, root_module_prefix: []const u8) !std.StringHashMap(*std.Build.Module) {
-    const dir_iterator = try std.fs.cwd().openIterableDir(root_source_path, .{});
+    const dir_iterator = try std.fs.openIterableDirAbsolute(root_source_path, .{ .access_sub_paths = false });
     var iterator = dir_iterator.iterate();
     var map = std.StringHashMap(*std.Build.Module).init(std.heap.page_allocator);
     errdefer map.deinit();
@@ -36,11 +36,20 @@ pub fn discover_modules(b: *std.Build, root_source_path: []const u8, root_module
     return map;
 }
 
+pub fn discover_modules_from_path(b: *std.Build, root_source_path: []const u8) !std.StringHashMap(*std.Build.Module) {
+    var out_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
+    const path_prefix = try std.fs.cwd().realpath(root_source_path, &out_buffer);
+    const root_module_prefix: []const u8 = try std.mem.concat(std.heap.page_allocator, u8, &[_][]const u8{ path_prefix, "/" });
+    std.debug.print("root_module_prefix: {s}\n", .{root_module_prefix});
+    std.debug.print("root_source_path: {s}\n", .{path_prefix});
+    return try discover_modules(b, path_prefix, root_module_prefix);
+}
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
 
     const optimize = b.standardOptimizeOption(.{});
-    const modules = try discover_modules(b, "src", "src/");
+    const modules = try discover_modules_from_path(b, "src");
     const unit_tests = b.addTest(.{
         .root_source_file = .{ .path = "src/common_test.zig" },
         .target = target,
